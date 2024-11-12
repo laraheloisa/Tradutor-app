@@ -25,9 +25,11 @@ function App() {
             <section
               className='text-sm text-textColor bg-transparent border none focus:outline-none cursor-pointer'
             >
-              {languages.map}  //passa pelos elementos de de lang
-
-
+              {  languages.map( (lang) => (
+                  <option key={lang.code} value={value.code}>
+                      {lang.name}
+                  </option>
+              ))} 
             </section>
 
           </div>
