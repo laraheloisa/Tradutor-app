@@ -1,15 +1,65 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 
 function App() {
-  const languages = [
-   
-  ];
+  const [inputText, setInputText] = useState("");  
+  const [translatedText, setTranslatedText] = useState("");  // Texto traduzido
+  const [isLoading, setIsLoading] = useState(false);  
+  const [error, setError] = useState("");  // Armazena erros
+  const [charCount, setCharCount] = useState(0);  // Contagem de caracteres
+  const [fromLanguage, setFromLanguage] = useState("pt-br");  // Idioma de origem
+  const [toLanguage, setToLanguage] = useState("en-us");  // Idioma de destino
 
-  let isLoading = false
-  let error = ""
+ 
+  const handleInputChange = (e) => {
+    const text = e.target.value;
+    if (text.length <= 250) {
+      setInputText(text);
+      setCharCount(text.length);
+    }
+  };
 
+  
+  const handleTranslate = async (text) => {
+    if (!text.trim()) return;
 
-  useEffect 
+    setIsLoading(true);  
+    setError("");  
+    setTranslatedText("");  // Reseta o texto traduzido
+
+    try {
+      // Chamada à API MyMemory para tradução
+      const response = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLanguage}|${toLanguage}`
+      );
+      const data = await response.json();
+
+      if (data.responseStatus !== 200) {
+        throw new Error("Erro ao traduzir o texto. Tente novamente.");
+      }
+
+      // Atualiza o estado com o texto traduzido
+      setTranslatedText(data.responseData.translatedText);
+    } catch (err) {
+      setError(err.message || "Erro desconhecido.");
+    } finally {
+      setIsLoading(false);  // Desativa o indicador de carregamento
+    }
+  };
+
+  // useEffect para chamar a tradução automaticamente toda vez que o inputText mudar
+  useEffect(() => {
+    if (inputText.trim()) {
+      handleTranslate(inputText);  // Chama a tradução
+    } else {
+      setTranslatedText("");  
+    }
+  }, [inputText, fromLanguage, toLanguage]);  // Dependências: texto de entrada e idiomas
+
+  // Função para alternar os idiomas
+  const handleSwitchLanguages = () => {
+    setFromLanguage(toLanguage);
+    setToLanguage(fromLanguage);
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -24,13 +74,17 @@ function App() {
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <select
               className="text-sm text-textColor bg-transparent border-none focus:outline-none cursor-pointer"
-              value="en-us"
+              value={fromLanguage}
+              onChange={(e) => setFromLanguage(e.target.value)}
             >
               <option value="pt-br">Português</option>
               <option value="en-us">Inglês</option>
             </select>
 
-            <button className="p-2 rounded-full hover:bg-gray-100 outline-none">
+            <button
+              className="p-2 rounded-full hover:bg-gray-100 outline-none"
+              onClick={handleSwitchLanguages}
+            >
               <svg
                 className="w-5 h-5 text-headerColor"
                 fill="none"
@@ -49,7 +103,8 @@ function App() {
 
             <select
               className="text-sm text-textColor bg-transparent border-none focus:outline-none cursor-pointer"
-              value="pt-br"
+              value={toLanguage}
+              onChange={(e) => setToLanguage(e.target.value)}
             >
               <option value="pt-br">Português</option>
               <option value="en-us">Inglês</option>
@@ -60,8 +115,13 @@ function App() {
             <div className="p-4">
               <textarea
                 className="w-full h-40 text-lg text-textColor bg-transparent resize-none border-none outline-none"
-                placeholder="Digite seu texto..."                
+                placeholder="Digite seu texto..."
+                value={inputText}
+                onChange={handleInputChange}
               ></textarea>
+              <div className="text-sm text-gray-500 mt-2">
+                {charCount} / 250 caracteres
+              </div>
             </div>
 
             <div className="relative p-4 bg-secondaryBackground border-l border-gray-200">
@@ -70,7 +130,9 @@ function App() {
                   <div className="animate-spin rounded-full h-8 w-8 border-blue-500 border-t-2"></div>
                 </div>
               ) : (
-                <p className="text-lg text-textColor">Colocar aqui o texto traduzido</p>
+                <p className="text-lg text-textColor">
+                  {translatedText || "A tradução aparecerá aqui..."}
+                </p>
               )}
             </div>
           </div>
